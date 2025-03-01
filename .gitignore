@@ -1,3 +1,4 @@
+claude_instructions/*
 node_modules/*
 .next/*
 .env.local

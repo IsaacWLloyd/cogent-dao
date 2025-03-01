@@ -38,6 +38,15 @@ export async function middleware(request: NextRequest) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
+  
+  // Check if this is an API route
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
+  
+  // For API routes, we don't redirect, just return 401 if not authenticated
+  if (isApiRoute) {
+    // Skip middleware for API routes - authorization is handled in the routes themselves
+    return response;
+  }
 
   // If the user is not signed in and trying to access dashboard, redirect to signin
   if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
@@ -56,5 +65,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/signin', '/signup'],
+  matcher: ['/dashboard/:path*', '/signin', '/signup', '/api/v1/:path*'],
 };

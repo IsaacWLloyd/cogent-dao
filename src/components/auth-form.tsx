@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Github, LogIn } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

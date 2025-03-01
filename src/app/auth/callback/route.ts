@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/src/lib/supabase-server';
+import { createServerSupabaseClient, ensureUserExists } from '@/src/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -28,6 +28,23 @@ export async function GET(request: NextRequest) {
       if (error) {
         console.error('Error setting session:', error.message);
       }
+    }
+  } else {
+    // We have a session, ensure user exists in our users table
+    try {
+      // Derive username from user metadata or email
+      const username = 
+        session.user.user_metadata.preferred_username || 
+        session.user.user_metadata.name || 
+        session.user.email?.split('@')[0] || 
+        `user_${session.user.id.substring(0, 8)}`;
+        
+      await ensureUserExists(supabase, session.user.id, {
+        username,
+        email: session.user.email
+      });
+    } catch (error) {
+      console.error('Error ensuring user exists:', error);
     }
   }
   
