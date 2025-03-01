@@ -3,6 +3,52 @@ import { createServerSupabaseClient } from '@/src/lib/supabase-server';
 import { getUserFromRequest, errorResponse, validateUuid } from '@/src/lib/api-utils';
 import { CreateVoteRequest, Vote, VoteDecision } from '@/src/lib/types';
 
+// Get votes for a decision
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return errorResponse(401, 'Unauthorized');
+    }
+
+    const url = new URL(request.url);
+    const decisionId = url.searchParams.get('decision_id');
+    
+    if (!decisionId || !validateUuid(decisionId)) {
+      return errorResponse(400, 'Valid decision ID is required');
+    }
+
+    // Connect to Supabase
+    const supabase = await createServerSupabaseClient();
+    
+    // Get votes for the decision with username from users table
+    const { data: votes, error: votesError } = await supabase
+      .from('votes')
+      .select(`
+        id,
+        decision_id,
+        user_id,
+        decision,
+        voting_logic,
+        created_at,
+        users:user_id (
+          username
+        )
+      `)
+      .eq('decision_id', decisionId);
+    
+    if (votesError) {
+      console.error('Error fetching votes:', votesError);
+      return errorResponse(500, 'Failed to fetch votes');
+    }
+    
+    return NextResponse.json(votes, { status: 200 });
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return errorResponse(500, 'An unexpected error occurred');
+  }
+}
+
 // Cast a vote on a decision
 export async function POST(request: NextRequest) {
   try {
