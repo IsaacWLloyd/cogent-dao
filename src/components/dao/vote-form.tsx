@@ -111,7 +111,7 @@ export function VoteForm({ proposalId, onSuccess, onCancel }: VoteFormProps) {
   };
 
   return (
-    <Card className="w-full p-6">
+    <Card className="w-full p-6 dark:bg-gradient-to-b dark:from-black/10 dark:to-transparent">
       <h2 className="text-xl font-bold mb-4">{hasVoted ? "Change Your Vote" : "Cast Your Vote"}</h2>
       
       {loadingDecision ? (
@@ -126,9 +126,9 @@ export function VoteForm({ proposalId, onSuccess, onCancel }: VoteFormProps) {
         </div>
       ) : hasVoted ? (
         <>
-          <div className="p-4 bg-green-50 border border-green-200 rounded-md mb-6">
-            <p className="text-green-700 font-medium">Your vote has been recorded!</p>
-            <p className="text-sm text-green-600 mt-1">
+          <div className="p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-md mb-6 shadow-sm dark:shadow-md dark:shadow-black/20">
+            <p className="text-green-700 dark:text-green-400 font-medium">Your vote has been recorded!</p>
+            <p className="text-sm text-green-600 dark:text-green-500 mt-1">
               You voted: <span className="font-semibold">{decision}</span>
             </p>
           </div>
@@ -141,7 +141,7 @@ export function VoteForm({ proposalId, onSuccess, onCancel }: VoteFormProps) {
                   {voteOptions.map((option) => (
                     <label
                       key={option.value}
-                      className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
+                      className="flex items-center space-x-2 p-2 border border-border/40 rounded cursor-pointer hover:bg-accent/10 dark:hover:bg-accent/30"
                     >
                       <input
                         type="radio"
@@ -164,7 +164,7 @@ export function VoteForm({ proposalId, onSuccess, onCancel }: VoteFormProps) {
                 </label>
                 <textarea
                   id="voting-logic-change"
-                  className="w-full border border-gray-300 rounded-md p-2 min-h-[80px] text-sm"
+                  className="w-full border border-input dark:border-border/40 rounded-md p-2 min-h-[80px] text-sm bg-background"
                   placeholder="Why did you change your vote? (optional)"
                   value={votingLogic}
                   onChange={(e) => setVotingLogic(e.target.value)}
@@ -200,7 +200,7 @@ export function VoteForm({ proposalId, onSuccess, onCancel }: VoteFormProps) {
                 {voteOptions.map((option) => (
                   <label
                     key={option.value}
-                    className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
+                    className="flex items-center space-x-2 p-2 border border-border/40 rounded cursor-pointer hover:bg-accent/10 dark:hover:bg-accent/30"
                   >
                     <input
                       type="radio"
@@ -223,7 +223,7 @@ export function VoteForm({ proposalId, onSuccess, onCancel }: VoteFormProps) {
               </label>
               <textarea
                 id="voting-logic"
-                className="w-full border border-gray-300 rounded-md p-2 min-h-[80px] text-sm"
+                className="w-full border border-input dark:border-border/40 rounded-md p-2 min-h-[80px] text-sm bg-background"
                 placeholder="Why are you voting this way? (optional)"
                 value={votingLogic}
                 onChange={(e) => setVotingLogic(e.target.value)}

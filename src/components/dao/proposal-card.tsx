@@ -56,15 +56,15 @@ export function ProposalCard({
   const [hasVoted, setHasVoted] = useState(false);
 
   return (
-    <Card className="p-6 w-full mb-4">
+    <Card className="p-6 w-full mb-4 dark:bg-gradient-to-b dark:from-black/10 dark:to-transparent">
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-xl font-bold">{proposal.title}</h3>
-          <div className="text-sm text-gray-500 mb-2">
+          <div className="text-sm text-muted-foreground mb-2">
             {proposal.status === "open" ? (
-              <span className="text-green-600 font-semibold">Open</span>
+              <span className="text-green-500 dark:text-green-400 font-semibold">Open</span>
             ) : (
-              <span className="text-red-600 font-semibold">Closed</span>
+              <span className="text-red-500 dark:text-red-400 font-semibold">Closed</span>
             )}
             {" • "}
             Created: {formatDate(proposal.created_at)}

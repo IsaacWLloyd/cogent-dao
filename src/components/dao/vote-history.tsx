@@ -73,19 +73,19 @@ export function VoteHistory({ proposalId, isProposalOwner }: VoteHistoryProps) {
       </div>
 
       {!proposalDecision ? (
-        <Card className="p-4">
-          <p className="text-sm text-gray-500">No voting has started for this proposal yet.</p>
+        <Card className="p-4 dark:bg-gradient-to-b dark:from-black/5 dark:to-transparent">
+          <p className="text-sm text-muted-foreground">No voting has started for this proposal yet.</p>
           <p className="text-sm mt-2">
             Click "Vote" to cast the first vote.
           </p>
         </Card>
       ) : votes.length === 0 ? (
-        <Card className="p-4">
-          <p className="text-sm text-gray-500">No votes have been cast on this proposal yet.</p>
+        <Card className="p-4 dark:bg-gradient-to-b dark:from-black/5 dark:to-transparent">
+          <p className="text-sm text-muted-foreground">No votes have been cast on this proposal yet.</p>
         </Card>
       ) : (
         <div className="space-y-3">
-          <Card className="p-4">
+          <Card className="p-4 dark:bg-gradient-to-b dark:from-black/5 dark:to-transparent">
             <h4 className="font-medium mb-3">All Votes</h4>
             <div className="space-y-4">
               {votes.map((vote) => (
@@ -110,14 +110,14 @@ export function VoteHistory({ proposalId, isProposalOwner }: VoteHistoryProps) {
                   </div>
                   
                   {vote.voting_logic && (
-                    <div className="mt-1 text-sm italic bg-background border border-input p-2 rounded">
+                    <div className="mt-1 text-sm italic bg-background/80 border border-input/60 dark:border-border/40 p-2 rounded shadow-inner dark:shadow-inner dark:shadow-black/40">
                       "{vote.voting_logic}"
                     </div>
                   )}
                   
                   {vote.agent_vote && (
                     <div className="mt-1">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Agent Vote</span>
+                      <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">Agent Vote</span>
                     </div>
                   )}
                 </div>
@@ -126,12 +126,12 @@ export function VoteHistory({ proposalId, isProposalOwner }: VoteHistoryProps) {
           </Card>
           
           {proposalDecision?.success !== null && (
-            <Card className="p-4">
+            <Card className="p-4 dark:bg-gradient-to-b dark:from-black/5 dark:to-transparent">
               <h4 className="font-medium">Vote Result</h4>
               <p className="mt-2">
                 Status: {proposalDecision.success 
-                  ? <span className="text-green-600 font-medium">Passed</span> 
-                  : <span className="text-red-600 font-medium">Failed</span>}
+                  ? <span className="text-green-500 dark:text-green-400 font-medium">Passed</span> 
+                  : <span className="text-red-500 dark:text-red-400 font-medium">Failed</span>}
               </p>
               {proposalDecision.percent_approval !== null && (
                 <p className="text-sm mt-1">Approval: {proposalDecision.percent_approval}%</p>

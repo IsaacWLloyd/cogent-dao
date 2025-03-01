@@ -75,7 +75,7 @@ export function ProposalForm({
   };
 
   return (
-    <Card className="w-full p-6">
+    <Card className="w-full p-6 dark:bg-gradient-to-b dark:from-black/10 dark:to-transparent">
       <h2 className="text-2xl font-bold mb-4">
         {mode === "create" ? "Create New Proposal" : "Edit Proposal"}
       </h2>

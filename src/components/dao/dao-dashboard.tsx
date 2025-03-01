@@ -14,9 +14,9 @@ export function DaoDashboard({ userId }: DaoDashboardProps) {
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
-      <Card className="p-6 mb-8">
+      <Card className="p-6 mb-8 dark:bg-gradient-to-b dark:from-black/10 dark:to-transparent">
         <h1 className="text-3xl font-bold mb-2">Cogent DAO</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           A platform for decentralized decision making through proposals and voting.
         </p>
       </Card>
