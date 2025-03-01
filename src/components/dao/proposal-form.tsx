@@ -37,17 +37,20 @@ export function ProposalForm({
       return;
     }
     
-    if (!description.trim()) {
+    const trimmedDescription = description.trim();
+    if (!trimmedDescription) {
       setToast({ message: "Description is required", type: "error" });
       return;
     }
-
-    // Ensure description is not empty
-    const descriptionValue = description.trim() || " ";
+    
+    if (trimmedDescription.length < 5) {
+      setToast({ message: "Description must be at least 5 characters long", type: "error" });
+      return;
+    }
     
     const data: CreateProposalRequest = {
       title: title.trim(),
-      description: descriptionValue,
+      description: trimmedDescription,
     };
 
     try {
@@ -105,7 +108,7 @@ export function ProposalForm({
                 setToast({ message: "", type: null });
               }
             }}
-            placeholder="Enter proposal description"
+            placeholder="Enter proposal description (minimum 5 characters)"
             className="w-full min-h-32"
             disabled={loading}
           />

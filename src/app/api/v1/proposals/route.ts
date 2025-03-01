@@ -22,6 +22,12 @@ export async function POST(request: NextRequest) {
     if (!body.description || typeof body.description !== 'string') {
       return errorResponse(400, 'Description is required and must be a string');
     }
+    
+    // Additional validation to match database constraints
+    const trimmedDescription = body.description.trim();
+    if (trimmedDescription.length < 5) {
+      return errorResponse(400, 'Description must be at least 5 characters long');
+    }
 
     // Connect to Supabase
     const supabase = await createServerSupabaseClient();

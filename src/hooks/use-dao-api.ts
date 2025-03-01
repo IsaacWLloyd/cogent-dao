@@ -90,10 +90,13 @@ export function useDaoApi() {
     setError(null);
     
     try {
-      // Ensure description is not empty - explicitly check for null, undefined, or empty string
-      if (!proposalData.description || proposalData.description.trim() === '') {
-        throw new Error('Description cannot be empty');
+      // Ensure description meets minimum length requirements
+      if (!proposalData.description || proposalData.description.trim().length < 5) {
+        throw new Error('Description must be at least 5 characters long');
       }
+      
+      // Create a properly formatted description - make sure it's not just whitespace
+      const cleanDescription = proposalData.description.trim();
       
       const response = await fetch('/api/v1/proposals', {
         method: 'POST',
@@ -102,8 +105,8 @@ export function useDaoApi() {
         },
         body: JSON.stringify({
           ...proposalData,
-          // Ensure description is a non-empty string
-          description: proposalData.description.trim() || ' ' // Fallback to space if somehow empty
+          // Set a safe minimum description that will pass database constraints
+          description: cleanDescription
         }),
       });
       
