@@ -52,9 +52,17 @@ export async function GET(
 // Update a decision (for setting success, percent_approval, vote_links)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: unknown // Use unknown instead of any
 ) {
   try {
+    // Type assertion with runtime validation
+    const params = (context as { params?: { id?: string } })?.params
+    if (!params?.id || typeof params.id !== 'string') {
+      return NextResponse.json(
+        { error: 'Invalid job ID parameter' },
+        { status: 400 }
+      )
+    }
     const user = await getUserFromRequest(request);
     if (!user) {
       return errorResponse(401, 'Unauthorized');
