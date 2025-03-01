@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import "./globals.css";
 
 import { AuthHeader } from "@/src/components/auth-header";
+import { createServerSupabaseClient } from "@/src/lib/supabase-server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,25 +25,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = cookies();
-  
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name, value, options) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          cookieStore.set({ name, value: '', ...options });
-        },
-      },
-    }
-  );
+  const supabase = await createServerSupabaseClient();
   
   const { data: { session } } = await supabase.auth.getSession();
   const isSignedIn = !!session;

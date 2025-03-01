@@ -3,12 +3,10 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  // Create a response object that we'll manipulate
+  const response = NextResponse.next();
 
+  // Create the Supabase client
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -18,17 +16,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name, value, options) {
-          // If the cookie is updated, update the request and response
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
+          // When setting a cookie, add it to the response
           response.cookies.set({
             name,
             value,
@@ -36,17 +24,7 @@ export async function middleware(request: NextRequest) {
           });
         },
         remove(name, options) {
-          // If the cookie is removed, update the request and response
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
+          // When removing a cookie, add it to the response with an empty value
           response.cookies.set({
             name,
             value: '',
@@ -73,6 +51,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
   
+  // Return the response with any updated cookies
   return response;
 }
 

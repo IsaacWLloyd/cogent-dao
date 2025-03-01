@@ -1,32 +1,13 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/src/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const accessToken = requestUrl.hash ? requestUrl.hash.substring(1).split('&').find(param => param.startsWith('access_token='))?.split('=')[1] : null;
   
-  const cookieStore = cookies();
-  
-  // Create server client with cookies
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name, value, options) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          cookieStore.set({ name, value: '', ...options });
-        },
-      },
-    }
-  );
+  // Get the Supabase client
+  const supabase = await createServerSupabaseClient();
   
   // If code exists, exchange it
   if (code) {
