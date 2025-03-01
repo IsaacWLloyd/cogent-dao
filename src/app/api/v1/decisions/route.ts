@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from '@/src/lib/supabase-server';
 import { getUserFromRequest, errorResponse, validateUuid } from '@/src/lib/api-utils';
 import { DecisionChain } from '@/src/lib/types';
 
-// Create a new decision chain record
+// Create a new decision chain record for a proposal
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -37,26 +37,36 @@ export async function POST(request: NextRequest) {
       return errorResponse(400, 'Cannot create decision for a closed proposal');
     }
     
-    // Anyone can create a decision point for voting
-    // This allows users to vote without requiring the proposal creator to create decision points
+    // Check if a decision chain already exists for this proposal
+    const { data: existingDecision, error: checkError } = await supabase
+      .from('decision_chain')
+      .select('id')
+      .eq('proposal_id', body.proposal_id)
+      .maybeSingle();
+      
+    if (existingDecision) {
+      // Decision chain already exists, return it
+      return NextResponse.json(existingDecision, { status: 200 });
+    }
     
-    // Get the highest decision point for this proposal
-    const { data: decisions, error: decisionsError } = await supabase
+    // No decision chain exists, create one
+    // Get the highest decision point across all proposals for proper ordering
+    const { data: highestPoint, error: pointError } = await supabase
       .from('decision_chain')
       .select('decision_point')
-      .eq('proposal_id', body.proposal_id)
       .order('decision_point', { ascending: false })
       .limit(1);
     
-    const nextDecisionPoint = decisions && decisions.length > 0 ? decisions[0].decision_point + 1 : 1;
+    const nextDecisionPoint = highestPoint && highestPoint.length > 0 ? highestPoint[0].decision_point + 1 : 1;
     
-    // Create the decision chain record
+    // Create the decision chain record with initialized vote_links array
     const { data: newDecision, error: decisionError } = await supabase
       .from('decision_chain')
       .insert({
         proposal_id: body.proposal_id,
         decision_point: nextDecisionPoint,
         created_at: new Date().toISOString(),
+        vote_links: [], // Initialize with empty array for vote IDs
       })
       .select()
       .single();

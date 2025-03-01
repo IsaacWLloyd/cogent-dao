@@ -21,19 +21,17 @@ export async function GET(request: NextRequest) {
     // Connect to Supabase
     const supabase = await createServerSupabaseClient();
     
-    // Get votes for the decision with username from users table
+    // Get votes for the decision including the username field
     const { data: votes, error: votesError } = await supabase
       .from('votes')
       .select(`
         id,
         decision_id,
         user_id,
+        username,
         decision,
         voting_logic,
-        created_at,
-        users:user_id (
-          username
-        )
+        created_at
       `)
       .eq('decision_id', decisionId);
     
@@ -100,25 +98,19 @@ export async function POST(request: NextRequest) {
       return errorResponse(400, 'Cannot vote on a closed proposal');
     }
     
-    // Check if user has already voted
-    const { data: existingVote } = await supabase
-      .from('votes')
-      .select('id')
-      .eq('decision_id', body.decision_id)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    // Generate a timestamp to distinguish multiple votes from the same user
+    const timestamp = new Date().toISOString();
     
-    if (existingVote) {
-      return errorResponse(400, 'You have already voted on this decision');
-    }
-    
-    // Create vote
+    // Create the vote with username included - using timestamp to make each vote unique
     const { data: newVote, error: voteError } = await supabase
       .from('votes')
       .insert({
         decision_id: body.decision_id,
         user_id: user.id,
+        username: user.username || 'Anonymous',
         decision: body.decision,
+        voting_logic: body.voting_logic || null,
+        created_at: timestamp
       })
       .select()
       .single();
@@ -126,6 +118,35 @@ export async function POST(request: NextRequest) {
     if (voteError) {
       console.error('Error creating vote:', voteError);
       return errorResponse(500, 'Failed to cast vote');
+    }
+    
+    // Fetch current vote_links from decision_chain
+    const { data: currentDecision, error: fetchError } = await supabase
+      .from('decision_chain')
+      .select('vote_links')
+      .eq('id', body.decision_id)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching decision:', fetchError);
+      return errorResponse(500, 'Failed to update decision chain');
+    }
+    
+    // Update vote_links to include the new vote ID
+    const currentVoteLinks = currentDecision.vote_links || [];
+    const updatedVoteLinks = Array.isArray(currentVoteLinks) 
+      ? [...currentVoteLinks, newVote.id] 
+      : [newVote.id];
+    
+    // Update the decision_chain with the new vote_links
+    const { error: updateError } = await supabase
+      .from('decision_chain')
+      .update({ vote_links: updatedVoteLinks })
+      .eq('id', body.decision_id);
+    
+    if (updateError) {
+      console.error('Error updating vote links:', updateError);
+      return errorResponse(500, 'Failed to update decision chain');
     }
     
     return NextResponse.json(newVote as Vote, { status: 201 });

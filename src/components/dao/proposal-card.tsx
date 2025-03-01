@@ -6,7 +6,7 @@ import { useDaoApi } from "@/src/hooks/use-dao-api";
 import { Proposal } from "@/src/lib/types";
 import { useState } from "react";
 import { Toast } from "@/src/components/ui/toast";
-import { DecisionList } from "./decision-list";
+import { VoteHistory } from "./vote-history";
 
 interface ProposalCardProps {
   proposal: Proposal;
@@ -115,14 +115,14 @@ export function ProposalCard({
           size="sm" 
           onClick={() => setShowDecisions(!showDecisions)}
         >
-          {showDecisions ? "Hide Voting History" : "Show Voting History"}
+          {showDecisions ? "Hide Votes" : "Show Votes"}
         </Button>
       </div>
       
       {showDecisions && (
         <div className="mt-4">
           {/* @ts-ignore - Import is at runtime */}
-          <DecisionList 
+          <VoteHistory 
             proposalId={proposal.id} 
             isProposalOwner={isOwner} 
           />

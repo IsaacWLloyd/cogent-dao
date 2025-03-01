@@ -20,9 +20,15 @@ export type Vote = {
   id: string;
   decision_id: string;
   user_id: string;
+  username?: string;
   decision: VoteDecision;
   voting_logic?: string;
   created_at: string;
+  agent_vote?: boolean;
+  users?: {
+    username?: string;
+    email?: string;
+  };
 };
 
 export type DecisionChain = {
@@ -53,6 +59,7 @@ export type UpdateProposalRequest = {
 export type CreateVoteRequest = {
   decision_id: string;
   decision: VoteDecision;
+  voting_logic?: string;
 };
 
 // API response types

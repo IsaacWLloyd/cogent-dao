@@ -6,15 +6,25 @@ import { createServerClient } from '@supabase/ssr';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getUserFromRequest(_request: NextRequest) {
   const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
   
-  if (!session) {
+  // Use getUser() instead of getSession() for security
+  const { data: { user }, error } = await supabase.auth.getUser();
+  
+  if (error || !user) {
     return null;
   }
   
+  // Fetch the username if available
+  const { data: userData } = await supabase
+    .from('users')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+  
   return {
-    id: session.user.id,
-    email: session.user.email,
+    id: user.id,
+    email: user.email,
+    username: userData?.username || null
   };
 }
 

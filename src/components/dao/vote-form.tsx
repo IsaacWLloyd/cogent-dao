@@ -5,94 +5,74 @@ import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import { Toast } from "@/src/components/ui/toast";
 import { useDaoApi } from "@/src/hooks/use-dao-api";
-import { useDecisionChains } from "@/src/hooks/use-decision-chains";
+import { useProposalDecisions } from "@/src/hooks/use-proposal-decisions";
 import { VoteDecision, DecisionChain } from "@/src/lib/types";
 
 interface VoteFormProps {
-  decisionId: string; // This is the proposalId
+  proposalId: string;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export function VoteForm({ decisionId, onSuccess, onCancel }: VoteFormProps) {
+export function VoteForm({ proposalId, onSuccess, onCancel }: VoteFormProps) {
   const [decision, setDecision] = useState<VoteDecision | ''>('');
+  const [votingLogic, setVotingLogic] = useState<string>('');
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | null }>({
     message: "",
     type: null,
   });
-  const [activeDecision, setActiveDecision] = useState<DecisionChain | null>(null);
+  const [proposalDecision, setProposalDecision] = useState<DecisionChain | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [loadingChangingVote, setLoadingChangingVote] = useState(false);
 
   const { castVote, loading, error } = useDaoApi();
-  const { getLatestDecision, loading: loadingDecision } = useDecisionChains();
+  const { fetchProposalDecision, loading: loadingDecision } = useProposalDecisions();
   
   useEffect(() => {
-    const fetchOrCreateDecision = async () => {
+    const fetchDecision = async () => {
       try {
-        // Try to get the latest decision chain for this proposal
-        const latest = await getLatestDecision(decisionId);
-        
-        // If no decision exists, automatically create one
-        if (!latest) {
-          await createDecisionPoint();
+        // Try to get the decision chain for this proposal
+        const decision = await fetchProposalDecision(proposalId);
+        if (decision) {
+          setProposalDecision(decision);
         } else {
-          setActiveDecision(latest);
+          // If no decision exists, we'll need to inform the user
+          console.log("No decision record found for this proposal");
+          setToast({ 
+            message: "No voting record found for this proposal", 
+            type: "error" 
+          });
         }
       } catch (err) {
-        console.error("Error fetching/creating decision:", err);
+        console.error("Error fetching proposal decision:", err);
         setToast({ 
-          message: "Failed to prepare voting session", 
+          message: "Failed to load voting data", 
           type: "error" 
         });
       }
     };
     
-    fetchOrCreateDecision();
-  }, [decisionId]);
-  
-  // Function to create a decision point
-  const createDecisionPoint = async () => {
-    try {
-      const response = await fetch('/api/v1/decisions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ proposal_id: decisionId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create decision point');
-      }
-
-      const newDecision = await response.json();
-      setActiveDecision(newDecision);
-      return newDecision;
-    } catch (err) {
-      console.error("Error creating decision:", err);
-      throw err;
-    }
-  };
+    fetchDecision();
+  }, [proposalId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!decision) {
-      setToast({ message: "Please select a decision", type: "error" });
+      setToast({ message: "Please select a vote option", type: "error" });
       return;
     }
     
-    if (!activeDecision) {
-      setToast({ message: "No active decision found", type: "error" });
+    if (!proposalDecision) {
+      setToast({ message: "No proposal decision record found", type: "error" });
       return;
     }
 
     try {
       const vote = await castVote({
-        decision_id: activeDecision.id,
-        decision: decision as VoteDecision,
+        decision_id: proposalDecision.id, // The ID of the decision chain record
+        decision: decision as VoteDecision, // The user's vote choice
+        voting_logic: votingLogic.trim() || undefined // Optional explanation
       });
       
       if (vote) {
@@ -114,30 +94,20 @@ export function VoteForm({ decisionId, onSuccess, onCancel }: VoteFormProps) {
     }
   };
 
-  const decisionOptions: { value: VoteDecision; label: string }[] = [
+  const voteOptions: { value: VoteDecision; label: string }[] = [
     { value: "approve", label: "Approve" },
     { value: "deny", label: "Deny" },
     { value: "abstain", label: "Abstain" },
   ];
 
-  // Change vote by creating a new decision point
-  const handleChangeVote = async () => {
-    try {
-      setLoadingChangingVote(true);
-      // Create a new decision point
-      await createDecisionPoint();
-      // Reset the decision selection
-      setDecision('');
-      setToast({ message: "You can now change your vote", type: "success" });
-    } catch (err) {
-      console.error("Error creating new decision point:", err);
-      setToast({ 
-        message: "Failed to create new voting session", 
-        type: "error" 
-      });
-    } finally {
-      setLoadingChangingVote(false);
-    }
+  // Prepare to change vote
+  const handleChangeVote = () => {
+    // Reset the decision selection and voting logic for a new vote
+    setDecision('');
+    setVotingLogic('');
+    // Show the vote form
+    setHasVoted(false);
+    setToast({ message: "You can now change your vote", type: "success" });
   };
 
   return (
@@ -146,9 +116,10 @@ export function VoteForm({ decisionId, onSuccess, onCancel }: VoteFormProps) {
       
       {loadingDecision ? (
         <p>Loading voting options...</p>
-      ) : !activeDecision ? (
+      ) : !proposalDecision ? (
         <div>
-          <p className="text-amber-600 mb-4">Unable to load voting options.</p>
+          <p className="text-amber-600 mb-4">No voting record found for this proposal.</p>
+          <p className="text-sm mb-4">Please try again. The system will create a voting record automatically.</p>
           <Button variant="outline" onClick={onCancel} className="w-full">
             Go Back
           </Button>
@@ -163,30 +134,46 @@ export function VoteForm({ decisionId, onSuccess, onCancel }: VoteFormProps) {
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Change your vote:</p>
-              <div className="flex flex-col space-y-2">
-                {decisionOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
-                  >
-                    <input
-                      type="radio"
-                      name="decision"
-                      value={option.value}
-                      checked={decision === option.value}
-                      onChange={() => setDecision(option.value)}
-                      className="h-4 w-4"
-                      disabled={loading}
-                    />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-2">Change your vote:</p>
+                <div className="flex flex-col space-y-2">
+                  {voteOptions.map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
+                    >
+                      <input
+                        type="radio"
+                        name="decision"
+                        value={option.value}
+                        checked={decision === option.value}
+                        onChange={() => setDecision(option.value)}
+                        className="h-4 w-4"
+                        disabled={loading}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="voting-logic-change" className="block text-sm font-medium mb-2">
+                  Explain your change (optional):
+                </label>
+                <textarea
+                  id="voting-logic-change"
+                  className="w-full border border-gray-300 rounded-md p-2 min-h-[80px] text-sm"
+                  placeholder="Why did you change your vote? (optional)"
+                  value={votingLogic}
+                  onChange={(e) => setVotingLogic(e.target.value)}
+                  disabled={loading}
+                />
               </div>
             </div>
 
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 mt-4">
               <Button type="submit" disabled={loading || !decision} className="flex-1">
                 {loading ? "Submitting..." : "Submit New Vote"}
               </Button>
@@ -206,30 +193,46 @@ export function VoteForm({ decisionId, onSuccess, onCancel }: VoteFormProps) {
         </>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Select your vote:</p>
-            <div className="flex flex-col space-y-2">
-              {decisionOptions.map((option) => (
-                <label
-                  key={option.value}
-                  className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
-                >
-                  <input
-                    type="radio"
-                    name="decision"
-                    value={option.value}
-                    checked={decision === option.value}
-                    onChange={() => setDecision(option.value)}
-                    className="h-4 w-4"
-                    disabled={loading}
-                  />
-                  <span>{option.label}</span>
-                </label>
-              ))}
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium mb-2">Select your vote:</p>
+              <div className="flex flex-col space-y-2">
+                {voteOptions.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="radio"
+                      name="decision"
+                      value={option.value}
+                      checked={decision === option.value}
+                      onChange={() => setDecision(option.value)}
+                      className="h-4 w-4"
+                      disabled={loading}
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="voting-logic" className="block text-sm font-medium mb-2">
+                Explain your vote (optional):
+              </label>
+              <textarea
+                id="voting-logic"
+                className="w-full border border-gray-300 rounded-md p-2 min-h-[80px] text-sm"
+                placeholder="Why are you voting this way? (optional)"
+                value={votingLogic}
+                onChange={(e) => setVotingLogic(e.target.value)}
+                disabled={loading}
+              />
             </div>
           </div>
 
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 mt-4">
             <Button type="submit" disabled={loading || !decision} className="flex-1">
               {loading ? "Submitting..." : "Submit Vote"}
             </Button>

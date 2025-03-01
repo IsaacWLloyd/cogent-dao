@@ -62,8 +62,31 @@ export function ProposalList({ mode, userId }: ProposalListProps) {
     setShowForm(true);
   };
 
-  const handleVote = (proposalId: string) => {
-    setVotingProposalId(proposalId);
+  const handleVote = async (proposalId: string) => {
+    try {
+      // Check if a decision chain exists for this proposal, if not create one
+      const response = await fetch('/api/v1/decisions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ proposal_id: proposalId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to prepare voting session');
+      }
+      
+      // Now open the voting form
+      setVotingProposalId(proposalId);
+    } catch (err) {
+      console.error("Error preparing vote:", err);
+      setToast({ 
+        message: err instanceof Error ? err.message : "Failed to prepare voting session", 
+        type: "error" 
+      });
+    }
   };
   
   // Handle proposal closure - also closes any open voting forms
@@ -131,7 +154,7 @@ export function ProposalList({ mode, userId }: ProposalListProps) {
       {votingProposalId && (
         <div className="mb-8">
           <VoteForm
-            decisionId={votingProposalId}
+            proposalId={votingProposalId}
             onSuccess={handleVoteSuccess}
             onCancel={() => setVotingProposalId(null)}
           />
