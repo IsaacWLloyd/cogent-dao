@@ -32,14 +32,22 @@ export function ProposalForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !description.trim()) {
-      setToast({ message: "Title and description are required", type: "error" });
+    if (!title.trim()) {
+      setToast({ message: "Title is required", type: "error" });
+      return;
+    }
+    
+    if (!description.trim()) {
+      setToast({ message: "Description is required", type: "error" });
       return;
     }
 
+    // Ensure description is not empty
+    const descriptionValue = description.trim() || " ";
+    
     const data: CreateProposalRequest = {
       title: title.trim(),
-      description: description.trim(),
+      description: descriptionValue,
     };
 
     try {
@@ -90,7 +98,13 @@ export function ProposalForm({
           <Textarea
             id="description"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              // Check if the field was previously empty to show validation
+              if (!description.trim() && e.target.value.trim()) {
+                setToast({ message: "", type: null });
+              }
+            }}
             placeholder="Enter proposal description"
             className="w-full min-h-32"
             disabled={loading}

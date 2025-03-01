@@ -90,22 +90,40 @@ export function useDaoApi() {
     setError(null);
     
     try {
+      // Ensure description is not empty - explicitly check for null, undefined, or empty string
+      if (!proposalData.description || proposalData.description.trim() === '') {
+        throw new Error('Description cannot be empty');
+      }
+      
       const response = await fetch('/api/v1/proposals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(proposalData),
+        body: JSON.stringify({
+          ...proposalData,
+          // Ensure description is a non-empty string
+          description: proposalData.description.trim() || ' ' // Fallback to space if somehow empty
+        }),
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          console.error('Error parsing response:', errorText);
+          throw new Error(`Error creating proposal: ${errorText}`);
+        }
+        console.error('Error creating proposal:', errorData);
         throw new Error(errorData.error || 'Failed to create proposal');
       }
       
       const data = await response.json();
       return data;
     } catch (err) {
+      console.error('Error creating proposal:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       return null;
     } finally {
