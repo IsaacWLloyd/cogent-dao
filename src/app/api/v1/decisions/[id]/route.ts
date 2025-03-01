@@ -6,9 +6,17 @@ import { DecisionChain } from '@/src/lib/types';
 // Get a specific decision
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: unknown // Use unknown instead of any
 ) {
   try {
+    // Type assertion with runtime validation
+    const params = (context as { params?: { id?: string } })?.params
+    if (!params?.id || typeof params.id !== 'string') {
+      return NextResponse.json(
+        { error: 'Invalid job ID parameter' },
+        { status: 400 }
+      )
+    }
     const user = await getUserFromRequest(request);
     if (!user) {
       return errorResponse(401, 'Unauthorized');
